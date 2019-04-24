@@ -1,0 +1,112 @@
+scalar Date
+scalar Time
+scalar DateTime
+
+type Query {
+  concepts(
+    where: ConceptConditions = {}
+    sort: ConceptSorting = RELEVANCE
+    slice: SliceInput = {}
+  ): [Concept!]!
+
+  match(
+    pattern: [String!]!
+  ): [MatchResult!]!
+
+  concept(
+    where: ConceptConditions!
+  ): Concept
+}
+
+type Mutation {
+  saveConcept(label: String!): Concept!
+  savePattern(name: String!, pattern: [String!]!): Pattern!
+}
+
+type Pattern {
+  id: ID!
+  parts: [String!]!
+  matches: [MatchResult!]!
+}
+
+type Concept {
+  id: ID!
+  label: String!
+  term: Term!
+}
+
+type MatchResult {
+  statement: String!
+  parts: [Term!]!
+  matches: [TermMatch!]!
+}
+
+type TermMatch {
+  name: String!
+  term: Term!
+}
+
+type MetaConcept {
+  id: ID!
+  label: String!
+  terms: [Term!]!
+}
+
+type DateTimeValue {
+  dateTime: DateTime!
+}
+
+type Term {
+  id: ID!
+  label: String!
+  children: [Term!]!
+  concepts: [Concept!]!
+  aggressiveHash: String!
+  stopHash: String!
+}
+
+type Location {
+  longitude: Float!
+  latitude: Float!
+}
+
+type Entry {
+  id: ID!
+  title: String
+  text: String!
+  parts: [Entry!]!
+  concepts: [Concept!]!
+}
+
+input SliceInput {
+  from: Int = 0
+  to: Int
+}
+
+enum ConceptSorting {
+  RELEVANCE
+  LABEL_ASC
+  LABEL_DESC
+}
+
+input IDConditions {
+  EQ: ID
+  IN: [ID!]
+  NOT_EQ: ID
+  NOT_IN: [ID!]
+}
+
+input ConceptConditions {
+  id: IDConditions
+  term: [TermConditions!]
+}
+
+input TermConditions {
+  id: IDConditions
+  parents: [TermConditions!]
+  children: [TermConditions!]
+}
+
+input EntryQueryInput {
+  text: String!
+}

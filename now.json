@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "name": "knowlific",
+  "alias": "knowlific",
+  "builds": [
+    { "src": "api/server.js", "use": "@now/node-server" },
+    { "src": "compute/index.js", "use": "@now/node" },
+    { "src": "www/package.json", "use": "@now/next" }
+  ],
+  "routes": [
+    { "src": "/api/graphql", "dest": "/api/server.js" },
+    { "src": "/compute", "dest": "/compute/index.js" },
+    { "src": "/(.*)", "dest": "/www/$1" }
+  ],
+  "env": {
+    "DGRAPH_HOST": "@dgraph-host"
+  }
+}

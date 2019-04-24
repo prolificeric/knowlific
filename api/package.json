@@ -1,0 +1,23 @@
+{
+  "name": "knowlific-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "graphql-yoga": "^1.17.4",
+    "lodash": "^4.17.11",
+    "neo4j-driver": "^1.7.3",
+    "uuid": "^3.3.2",
+    "wink-nlp-utils": "^2.0.3"
+  },
+  "devDependencies": {}
+}
