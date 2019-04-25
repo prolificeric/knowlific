@@ -11,8 +11,5 @@
     { "src": "/api/graphql", "dest": "/api/server.js" },
     { "src": "/compute", "dest": "/compute/index.js" },
     { "src": "/(.*)", "dest": "/www/$1" }
-  ],
-  "env": {
-    "DGRAPH_HOST": "@dgraph-host"
-  }
+  ]
 }
