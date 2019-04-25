@@ -1,49 +1,22 @@
-const parseLines = lines => {
-  return lines.map((line, index) => {
-    const key = `line${index}`;
-
-    const parts = line.match(/@\w+|[^@]+/g).map((part, n) => {
-      const id = [index, n].join('_');
-      const key = `ngram_${id}`;
-
-      if (part[0] === '@') {
-        return {
-          key,
-          type: 'variable',
-          name: part.slice(1)
-        };
-      }
-
-      return {
-        key,
-        type: 'exact',
-        label: part
-      };
-    });
-    
-    return {
-      index,
-      key,
-      parts,
-      source
-    };
-  });
-};
-
 const PatternSaveQuery = (name, lines) => {
   const parsed = parseLines(lines);
 
   const query = `
-    CREATE (patternNode:Pattern { name: {pattern}.name })
+    MERGE (patternNode:Pattern { name: {pattern}.name })
       SET pattern.id = randomUUID()
     
-    WITH patternNode, pattern
-    UNWIND 
+    WITH patternNode
+    UNWIND {pattern}.subpatterns AS subpattern
+      MERGE (patternNode)-[:CONTAINS_SUBPATTERN]->(subpatternNode:Subpattern { text: subpattern.text })
+      WITH patternNode, subpatternNode
+      UNWIND subpattern.components AS component
+        MERGE ()-[:CONTAINS_COMPONENT]->(componentNode:PatternComponent)
   `;
 
   const variables = {
     pattern: {
-      name
+      name,
+      subpatterns
     }
   };
 
@@ -61,58 +34,51 @@ const PatternMatchQuery = lines => {
   const variables = {};
   let counter = 0;
 
-  lines.forEach((line, i) => {
-    const lineName = `line${i}`;
-    const lineParts = line.match(/@\w+|[^@]+/g);
-    
-    if (!lineParts) {
+  parseLines(lines).forEach(({ key, parts }) => {
+    if (!parts) {
       return;
     }
 
-    returns[lineName] = lineName;
+    returns[key] = key;
 
-    const matchPrefix = `(:Concept)<-[:TAGGED_AS]-(line${i}:Term)-[:CONTAINS_NGRAM]->`;
+    const matchPrefix = `(:Concept)<-[:TAGGED_AS]-(${key}:Term)-[:CONTAINS_NGRAM]->`;
     const matchParts = [];
     const termRels = [];
 
-    lineParts.forEach((_part, j) => {
-      const part = _part.trim();
-      const [first, ...rest] = part;
-      const ngramNum = counter++;
-      const ngramName = `ngram${ngramNum}`;
+    parts.forEach(part => {
       const propParts = [];
 
-      if (j === 0) {
+      if (part.index === 0) {
         propParts.push('from: 0');
       }
 
-      if (j === lineParts.length - 1) {
-        propParts.push(`to: ${lineName}.size`);
+      if (part.index === parts.length - 1) {
+        propParts.push(`to: ${key}.size`);
       }
 
       // Variable match of term
-      if (first === '@') {
-        const varName = rest.join('');
+      if (part.type === 'variable') {
         const propStr = propParts.length > 0 ? ` { ${propParts.join(', ')} } ` : '';
+        const termCondition = `(${part.name}:Term)`;
+        const ngramCondition = `(${part.key}:Ngram)`;
 
-        matchParts.push(`(${ngramName}${propStr})`);
-        termRels.push(`(${ngramName})-[:INSTANCE_OF]->(${varName})`);
-        returns[varName] = varName;
-        
-        const termCondition = `(${varName}:Term)`;
+        matchParts.push(`(${part.key}${propStr})`);
+        termRels.push(`(${part.key})-[:INSTANCE_OF]->(${part.name})`);
+        returns[part.name] = part.name;
         wheres[termCondition] = termCondition;
+        wheres[ngramCondition] = ngramCondition;
       }
       
       // Exact match of term
       else {
-        const label = part;
-
-        propParts.push(`label: {${ngramName}}`);
-        variables[ngramName] = label;
+        propParts.push(`label: {${part.key}}.label`);
 
         const propStr = propParts.length > 0 ? ` { ${propParts.join(', ')} } ` : '';
-        
-        matchParts.push(`(${ngramName}${propStr})`);
+        const ngramCondition = `(${part.key}:Ngram)`;
+
+        variables[part.key] = part;
+        matchParts.push(`(${part.key}${propStr})`);
+        wheres[ngramCondition] = ngramCondition;
       }
     });
 
@@ -167,6 +133,41 @@ const PatternMatchQuery = lines => {
   };
 };
 
+const parseLines = lines => {
+  return lines.map((source, index) => {
+    const key = `line${index}`;
+
+    const parts = source.match(/@\w+|[^@]+/g).map((part, n) => {
+      const id = [index, n].join('_');
+      const key = `ngram_${id}`;
+
+      if (part[0] === '@') {
+        return {
+          key,
+          type: 'variable',
+          name: part.slice(1),
+          index: n
+        };
+      }
+
+      return {
+        key,
+        type: 'exact',
+        label: part.trim(),
+        index: n
+      };
+    });
+    
+    return {
+      index,
+      key,
+      parts,
+      source
+    };
+  });
+};
+
 module.exports = {
-  PatternMatchQuery
+  PatternMatchQuery,
+  parseLines
 };
