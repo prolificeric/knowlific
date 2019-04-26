@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npm-run-all -p -r dev-api dev-www",
-    "dev:api": "nodemon --watch api api/server.js",
+    "dev:api": "nodemon --watch api -e js,graphql api/server.js",
     "dev:www": "cd www && npx next",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "cd api && npm i && cd ../www && npm i && cd ../compute && npm i"
