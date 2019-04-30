@@ -1,6 +1,6 @@
 const nlp = require('../nlp');
 
-const TermSaveQuery = rawLabel => {
+const SaveQuery = rawLabel => {
   const { allTerms, rootTerm } = createTermTree(rawLabel);
 
   const mappedAndSortedTerms = allTerms
@@ -131,6 +131,6 @@ const createTermTree = (rawLabel, termIndex = {}) => {
 };
 
 module.exports = {
-  TermSaveQuery,
+  SaveQuery,
   createTermTree
 };

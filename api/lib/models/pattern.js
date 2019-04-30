@@ -5,10 +5,11 @@ const nlp = require('../nlp');
 const VARIABLE = 'VARIABLE';
 const NGRAM = 'NGRAM';
 
-const PatternGetQuery = idOrName => {
+const GetQuery = idOrName => {
   const query = `
     MATCH (patternNode:Pattern)
       WHERE patternNode.id = {idOrName} OR patternNode.name = {idOrName}
+
     OPTIONAL MATCH
       (patternNode)-[:MATCH]->(patternMatchNode:PatternMatch),
       (patternMatchNode)-[variableEdge:VARIABLE]->(termNode:Term)
@@ -59,7 +60,7 @@ const PatternGetQuery = idOrName => {
   };
 };
 
-const PatternMatchMappingQuery = ({ pattern, matches }) => {
+const MatchMappingQuery = ({ pattern, matches }) => {
   const query = `
     MATCH (patternNode:Pattern { id: {pattern}.id })
 
@@ -163,7 +164,7 @@ const PatternMatchMappingQuery = ({ pattern, matches }) => {
   };
 };
 
-const PatternSaveQuery = ({ name, extendsIds, statements }) => {
+const SaveQuery = ({ name, extendsIds, statements }) => {
   const query = `
     MERGE (patternNode:Pattern { name: {pattern}.name })
       ON CREATE SET
@@ -257,11 +258,21 @@ const PatternSaveQuery = ({ name, extendsIds, statements }) => {
   };
 };
 
-const PatternMatchQuery = lines => {
+const MatchQuery = (lines, requiredTermId = null) => {
   const matches = [];
   const returns = {};
-  const wheres = {};
-  const variables = {};
+
+  const requiredTermWhere = '({requiredTermId} IS NULL OR ' + lines.map((line, i) => {
+    return `line${i}.id = {requiredTermId}`;
+  }).join(' OR ') + ')';
+
+  const wheres = {
+    [requiredTermWhere]: requiredTermWhere 
+  };
+
+  const variables = {
+    requiredTermId
+  };
 
   parseStatements(lines).forEach(({ key, parts }) => {
     if (!parts) {
@@ -394,9 +405,9 @@ const parseStatements = lines => {
 };
 
 module.exports = {
-  PatternGetQuery,
-  PatternMatchQuery,
-  PatternSaveQuery,
-  PatternMatchMappingQuery,
+  GetQuery,
+  MatchQuery,
+  SaveQuery,
+  MatchMappingQuery,
   parseStatements
 };

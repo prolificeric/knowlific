@@ -1,4 +1,6 @@
-const ConceptSaveQuery = ({ term, label }) => {
+const _ = require('lodash');
+
+const SaveQuery = ({ term, label }) => {
   return {
     query: `
       MATCH (term:Term { id: {term}.id })
@@ -24,7 +26,67 @@ const ConceptSaveQuery = ({ term, label }) => {
   };
 };
 
-const ConceptFindQuery = () => {
+const PotentialPatternsQuery = id => {
+  return {
+    query: `
+      MATCH
+        (:Concept { id: {id} })
+          <-[:TAGGED_AS]-
+        (:Term)
+          -[:CONTAINS_NGRAM]->
+        (:Ngram)
+          -[:INSTANCE_OF]->
+        (:Term)
+          <-[:TERM]-
+        (part:PatternStatementPart)
+          <-[:PART]-
+        (statement:PatternStatement)
+          <-[:STATEMENT]-
+        (pattern:Pattern)
+      RETURN DISTINCT pattern, statement, part
+    `,
+    variables: {
+      id
+    },
+    processResult: result => {
+      const patterns = {};
+
+      result.records.forEach(record => {
+        const pattern = record.get('pattern').properties;
+        const statement = record.get('statement').properties;
+        const part = record.get('part').properties;
+
+        _.defaultsDeep(patterns, {
+          [pattern.id]: {
+            ...pattern,
+            statements: {
+              [statement.id]: {
+                ...statement,
+                parts: {
+                  [part.id]: part
+                }
+              }
+            }
+          }
+        });
+      });
+
+      return Object.values(patterns).map(pattern => {
+        return {
+          ...pattern,
+          statements: Object.values(pattern.statements).map(statement => {
+            return {
+              ...statement,
+              parts: Object.values(statement.parts)
+            };
+          })
+        };
+      });
+    }
+  };
+};
+
+const FindQuery = () => {
   return {
     query: `
       MATCH (concept:Concept)<-[:TAGGED_AS]-(term:Term)
@@ -44,6 +106,7 @@ const ConceptFindQuery = () => {
 };
 
 module.exports = {
-  ConceptSaveQuery,
-  ConceptFindQuery
+  SaveQuery,
+  FindQuery,
+  PotentialPatternsQuery
 };
