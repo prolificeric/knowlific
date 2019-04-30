@@ -10,7 +10,13 @@ const resolvers = {
     },
 
     match: (__, { statements }, { db }) => {
-      return db.transact(Pattern.PatternMatchQuery(statements)).then(console.log);
+      return db
+        .transact(Pattern.PatternMatchQuery(statements))
+        .then(matches => {
+          return matches.map(match => {
+            return match.variableMatches;
+          });
+        });
     }
   },
 

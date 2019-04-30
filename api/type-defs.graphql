@@ -11,7 +11,7 @@ type Query {
 
   match(
     statements: [String!]!
-  ): [MatchResult!]!
+  ): [[PatternVariableMatch]!]!
 
   concept(
     where: ConceptConditions!
@@ -86,17 +86,6 @@ type Ngram {
 type Concept {
   id: ID!
   label: String!
-  term: Term!
-}
-
-type MatchResult {
-  statement: String!
-  parts: [Term!]!
-  matches: [TermMatch!]!
-}
-
-type TermMatch {
-  name: String!
   term: Term!
 }
 
