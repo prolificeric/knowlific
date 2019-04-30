@@ -5,6 +5,60 @@ const nlp = require('../nlp');
 const VARIABLE = 'VARIABLE';
 const NGRAM = 'NGRAM';
 
+const PatternGetQuery = idOrName => {
+  const query = `
+    MATCH (patternNode:Pattern)
+      WHERE patternNode.id = {idOrName} OR patternNode.name = {idOrName}
+    OPTIONAL MATCH
+      (patternNode)-[:MATCH]->(patternMatchNode:PatternMatch),
+      (patternMatchNode)-[variableEdge:VARIABLE]->(termNode:Term)
+
+    RETURN patternNode, patternMatchNode, variableEdge, termNode
+  `;
+
+  const variables = {
+    idOrName
+  };
+
+  const processResult = result => {
+    if (result.records.length === 0) return null;
+
+    const pattern = {
+      matches: {}
+    };
+
+    result.records.forEach(record => {
+      const patternNode = record.get('patternNode').properties;
+      const patternMatchNode = record.get('patternMatchNode').properties;
+      const variableEdge = record.get('variableEdge').properties;
+      const termNode = record.get('termNode').properties;
+
+      Object.assign(pattern, patternNode);
+      
+      _.set(pattern.matches, [patternMatchNode.id, 'variableMatches', variableEdge.name], {
+        name: variableEdge.name,
+        term: termNode
+      });
+    });
+
+    return {
+      ...pattern,
+      matches: Object.values(pattern.matches).map(match => {
+        return {
+          ...match,
+          variableMatches: Object.values(match.variableMatches)
+        };
+      })
+    };
+  };
+
+  return {
+    query,
+    variables,
+    processResult
+  };
+};
+
 const PatternMatchMappingQuery = ({ pattern, matches }) => {
   const query = `
     MATCH (patternNode:Pattern { id: {pattern}.id })
@@ -340,6 +394,7 @@ const parseStatements = lines => {
 };
 
 module.exports = {
+  PatternGetQuery,
   PatternMatchQuery,
   PatternSaveQuery,
   PatternMatchMappingQuery,

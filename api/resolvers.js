@@ -5,6 +5,10 @@ const Pattern = require('./lib/models/pattern');
 
 const resolvers = {
   Query: {
+    pattern: (__, { idOrName }, { db }) => {
+      return db.transact(Pattern.PatternGetQuery(idOrName));
+    },
+
     concepts: (__, args, { db }) => {
       return db.transact(Concept.ConceptFindQuery(args));
     },
@@ -42,7 +46,9 @@ const resolvers = {
         return await run(connectionQuery);
       });
     }
-  }
+  },
+
+  Pattern: {}
 };
 
 module.exports = resolvers;

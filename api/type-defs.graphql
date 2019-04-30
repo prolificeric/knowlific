@@ -9,6 +9,10 @@ type Query {
     slice: SliceInput = {}
   ): [Concept!]!
 
+  pattern(
+    idOrName: String!
+  ): Pattern
+
   match(
     statements: [String!]!
   ): [[PatternVariableMatch]!]!
