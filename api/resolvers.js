@@ -9,8 +9,8 @@ const resolvers = {
       return db.transact(Concept.ConceptFindQuery(args));
     },
 
-    match: (__, { pattern }, { db }) => {
-      return db.transact(Pattern.PatternMatchQuery(pattern));
+    match: (__, { statements }, { db }) => {
+      return db.transact(Pattern.PatternMatchQuery(statements)).then(console.log);
     }
   },
 
@@ -21,6 +21,19 @@ const resolvers = {
         const term = await run(termQuery);
         const conceptQuery = ConceptSaveQuery({ label, term });
         return run(conceptQuery);
+      });
+    },
+
+    savePattern: (__, args, { db }) => {
+      return db.transact(async ({ run }) => {
+        const [pattern, matches] = await Promise.all([
+          run(Pattern.PatternSaveQuery(args)),
+          run(Pattern.PatternMatchQuery(args.statements))
+        ]);
+
+        const connectionQuery = Pattern.PatternMatchMappingQuery({ matches, pattern });
+        
+        return await run(connectionQuery);
       });
     }
   }

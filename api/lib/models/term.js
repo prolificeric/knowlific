@@ -29,7 +29,9 @@ const TermSaveQuery = rawLabel => {
         MATCH (childTermNode:Term { label: ngram.props.label })
         MERGE (termNode)-[:CONTAINS_TERM]->(childTermNode)
         MERGE (termNode)-[:CONTAINS_NGRAM]->(ngramNode:Ngram { from: ngram.props.from, to: ngram.props.to })
-          ON CREATE SET ngramNode += ngram.props
+          ON CREATE SET
+            ngramNode.id = randomUUID(),
+            ngramNode += ngram.props
         MERGE (ngramNode)-[:INSTANCE_OF]->(childTermNode)
         WITH termNode, ngramNode, ngram
         UNWIND ngram.next AS nextNgram
@@ -47,8 +49,6 @@ const TermSaveQuery = rawLabel => {
       const { properties } = record.get('termNode');
       return properties.label === rootTerm.label;
     }) || null;
-
-    console.log(result)
 
     return record && record.get('termNode').properties;
   };

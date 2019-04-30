@@ -10,7 +10,7 @@ type Query {
   ): [Concept!]!
 
   match(
-    pattern: [String!]!
+    statements: [String!]!
   ): [MatchResult!]!
 
   concept(
@@ -20,13 +20,67 @@ type Query {
 
 type Mutation {
   saveConcept(label: String!): Concept!
-  savePattern(name: String!, pattern: [String!]!): Pattern!
+
+  savePattern(
+    name: String!,
+    extendsIds: [String!] = [],
+    statements: [String!] = []
+  ): Pattern!
 }
 
 type Pattern {
   id: ID!
-  parts: [String!]!
-  matches: [MatchResult!]!
+  name: String!
+  extends: [Pattern!]!
+  statements: [PatternStatement!]!
+  matches: [PatternMatch!]!
+}
+
+type PatternStatement {
+  id: ID!
+  source: String!
+  parts: [PatternPart!]!
+  matches: [PatternStatementMatch!]!
+}
+
+type PatternPart {
+  label: String!
+  type: PatternPartType!
+}
+
+type PatternMatch {
+  id: ID!
+  pattern: Pattern!
+  statementMatches: [PatternStatementMatch!]!
+  variableMatches: [PatternVariableMatch!]!
+}
+
+type PatternStatementMatch {
+  id: ID!
+  statement: PatternStatement!
+  term: Term!
+  ngramMatches: [NgramMatch!]!
+}
+
+type PatternVariableMatch {
+  name: String!
+  term: Term!
+}
+
+type NgramMatch {
+  part: PatternPart!
+  ngram: Ngram!
+}
+
+enum PatternPartType {
+  NGRAM
+  VARIABLE
+}
+
+type Ngram {
+  label: String!
+  term: Term!
+  of: Term!
 }
 
 type Concept {

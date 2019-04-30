@@ -1,6 +1,12 @@
 const _ = require('lodash');
 const uuid = require('uuid/v4');
 
+const getFirstNode = name => result => {
+  return result.records.slice(0, 1).map(record => {
+    return record.get(name).properties;
+  })[0];
+};
+
 const createNeo4jAdapter = ({ driver }) => {
   const executeAst = ast => {
     return transact(({ run }) => {
@@ -13,12 +19,12 @@ const createNeo4jAdapter = ({ driver }) => {
     const tx = session.beginTransaction();
 
     const run = ({ query, variables, processResult }) => {
-      console.log(
-        query
-          .split('\n')
-          .map((l, i) => `${i+1}: ${l}`)
-          .join('\n')
-      )
+      // console.log(
+      //   query
+      //     .split('\n')
+      //     .map((l, i) => `${i+1}: ${l}`)
+      //     .join('\n')
+      // )
       return tx
         .run(query, variables)
         .then(processResult || (r => r));
@@ -420,6 +426,7 @@ const operators = {
 };
 
 module.exports = {
+  getFirstNode,
   createNeo4jAdapter,
   astToCypher
 };
